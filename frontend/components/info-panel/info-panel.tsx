@@ -1,19 +1,42 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Bell, Image as ImageIcon, Star, Users, X } from "lucide-react"
 import { Avatar } from "@/components/avatar"
 import { useChat } from "@/context/chat-context"
-import { MUTUAL_GROUPS, SHARED_MEDIA } from "@/lib/mock-data"
+import type { Attachment } from "@/lib/types"
 import { cn } from "@/lib/utils"
 
 export function InfoPanelContent({ onClose }: { onClose?: () => void }) {
-  const { activeConversation, users } = useChat()
+  const { activeConversation, activeConversationId, users, getSharedMediaFor } =
+    useChat()
+  const [media, setMedia] = useState<Attachment[]>([])
+  const [loadingMedia, setLoadingMedia] = useState(false)
+
+  useEffect(() => {
+    if (!activeConversationId) {
+      setMedia([])
+      return
+    }
+    let cancelled = false
+    setLoadingMedia(true)
+    getSharedMediaFor(activeConversationId).then((items) => {
+      if (!cancelled) {
+        setMedia(items)
+        setLoadingMedia(false)
+      }
+    })
+    return () => {
+      cancelled = true
+    }
+  }, [activeConversationId, getSharedMediaFor])
+
   if (!activeConversation) return null
 
   const user = activeConversation.isGroup
     ? undefined
     : users[activeConversation.participantId]
-  const media = SHARED_MEDIA.default
+  const imageMedia = media.filter((m) => m.type === "image" && m.url)
   const subtitle = activeConversation.isGroup
     ? `${activeConversation.members?.length ?? 0} members`
     : (user?.role ?? "")
@@ -96,56 +119,40 @@ export function InfoPanelContent({ onClose }: { onClose?: () => void }) {
         ))}
       </div>
 
-      {/* Shared media */}
-      <div className="px-4 pb-4">
+      {/* Shared media — real attachments exchanged in this conversation */}
+      <div className="px-4 pb-6">
         <div className="mb-2 flex items-center justify-between">
           <h4 className="flex items-center gap-1.5 text-xs font-semibold">
             <ImageIcon className="h-3.5 w-3.5 text-muted-foreground" />
             Shared Media
           </h4>
-          <button className="text-[11px] text-brand transition-opacity hover:opacity-80">
-            See all
-          </button>
         </div>
-        <div className="grid grid-cols-3 gap-1.5">
-          {media.map((m) => (
-            <button
-              key={m.id}
-              className="group relative aspect-square overflow-hidden rounded-lg bg-secondary"
-            >
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
-                src={m.url || "/placeholder.svg"}
-                alt={m.alt}
-                className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
-              />
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {/* Mutual groups */}
-      <div className="px-4 pb-6">
-        <h4 className="mb-2 flex items-center gap-1.5 text-xs font-semibold">
-          <Users className="h-3.5 w-3.5 text-muted-foreground" />
-          Mutual Groups
-        </h4>
-        <div className="space-y-1">
-          {MUTUAL_GROUPS.map((g) => (
-            <button
-              key={g.id}
-              className="flex w-full items-center gap-3 rounded-lg px-2 py-2 text-left transition-colors hover:bg-secondary/60"
-            >
-              <Avatar name={g.name} color={g.color} size="sm" />
-              <div className="min-w-0 flex-1">
-                <p className="truncate text-xs font-medium">{g.name}</p>
-                <p className="text-[11px] text-muted-foreground">
-                  {g.members} members
-                </p>
-              </div>
-            </button>
-          ))}
-        </div>
+        {loadingMedia ? (
+          <p className="text-[11px] text-muted-foreground">Loading…</p>
+        ) : imageMedia.length === 0 ? (
+          <p className="text-[11px] text-muted-foreground">
+            No images shared yet.
+          </p>
+        ) : (
+          <div className="grid grid-cols-3 gap-1.5">
+            {imageMedia.slice(0, 9).map((m, i) => (
+              <a
+                key={`${m.url}-${i}`}
+                href={m.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group relative aspect-square overflow-hidden rounded-lg bg-secondary"
+              >
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={m.url}
+                  alt={m.name}
+                  className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105"
+                />
+              </a>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

@@ -21,6 +21,7 @@ import { useAuth } from "@/context/auth-context"
 import {
   getMessages,
   getPresence,
+  getSharedMedia,
   getUnreadCounts,
   getUsers,
   sendMessage as apiSendMessage,
@@ -86,6 +87,8 @@ interface ChatContextValue {
   updateSettings: (partial: Partial<Settings>) => void
 
   lastMessageFor: (conversationId: string) => Message | undefined
+  /** Fetches real attachments exchanged with the given user from the backend. */
+  getSharedMediaFor: (conversationId: string) => Promise<Attachment[]>
 
   loading: boolean
   error: string | null
@@ -113,6 +116,14 @@ function colorForId(id: string | number): string {
  * *other* user's id (string), matching how conversations are keyed below. */
 function toUiMessage(m: BackendMessage, currentUserId: number): Message {
   const otherId = m.sender === currentUserId ? m.receiver : m.sender
+  let attachment: Attachment | undefined
+  if (m.attachment_url) {
+    attachment = {
+      type: m.attachment_type === "image" ? "image" : "file",
+      name: m.attachment_name ?? "attachment",
+      url: m.attachment_url,
+    }
+  }
   return {
     id: String(m.id),
     conversationId: String(otherId),
@@ -123,6 +134,7 @@ function toUiMessage(m: BackendMessage, currentUserId: number): Message {
     // separate "delivered" concept, so anything unread shows as "sent".
     status: m.is_read ? "read" : "sent",
     reactions: [],
+    attachment,
   }
 }
 
@@ -357,19 +369,17 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const sendMessage = useCallback<ChatContextValue["sendMessage"]>(
     (text, options) => {
       const trimmed = text.trim()
-      if (!trimmed) return
+      const attachment = options?.attachment
+      // A message needs either text or an attachment — not neither.
+      if (!trimmed && !attachment) return
       const conversationId = activeConversationId
       if (!conversationId) return
 
-      // Attachments aren't supported by the backend (no file upload
-      // endpoint exists) — text only. We still accept the param so the
-      // message-input component doesn't need to change, but we drop it.
-      void options
-
       const receiverId = Number(conversationId)
 
-      // Optimistic UI: show the message immediately with a temporary id,
-      // then reconcile once the real response (or the next poll) arrives.
+      // Optimistic UI: show the message immediately with a temporary id
+      // (using the attachment's local blob URL for instant preview), then
+      // reconcile once the real response (or the next poll) arrives.
       const tempId = `pending-${Date.now()}`
       const optimisticMessage: Message = {
         id: tempId,
@@ -379,6 +389,9 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         timestamp: new Date().toISOString(),
         status: "sent",
         reactions: [],
+        attachment: attachment
+          ? { type: attachment.type, name: attachment.name, url: attachment.url, size: attachment.size }
+          : undefined,
       }
       setMessagesByConversation((prev) => ({
         ...prev,
@@ -386,13 +399,26 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       }))
       setReplyTarget(null)
 
-      apiSendMessage(receiverId, trimmed)
+      apiSendMessage(receiverId, trimmed, attachment?.file)
         .then((real) => {
           setMessagesByConversation((prev) => ({
             ...prev,
             [conversationId]: (prev[conversationId] ?? []).map((m) =>
               m.id === tempId
-                ? { ...m, id: String(real.id), timestamp: real.timestamp }
+                ? {
+                    ...m,
+                    id: String(real.id),
+                    timestamp: real.timestamp,
+                    // Swap the local blob URL for the real, durable server URL.
+                    attachment: real.attachment_url
+                      ? {
+                          type: real.attachment_type === "image" ? "image" : "file",
+                          name: real.attachment_name ?? attachment?.name ?? "attachment",
+                          url: real.attachment_url,
+                          size: attachment?.size,
+                        }
+                      : m.attachment,
+                  }
                 : m,
             ),
           }))
@@ -467,6 +493,26 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     [messagesByConversation],
   )
 
+  const getSharedMediaFor = useCallback(
+    async (conversationId: string): Promise<Attachment[]> => {
+      const userId = Number(conversationId)
+      if (!Number.isFinite(userId)) return []
+      try {
+        const msgs = await getSharedMedia(userId)
+        return msgs
+          .filter((m) => m.attachment_url)
+          .map((m) => ({
+            type: m.attachment_type === "image" ? ("image" as const) : ("file" as const),
+            name: m.attachment_name ?? "attachment",
+            url: m.attachment_url ?? undefined,
+          }))
+      } catch {
+        return []
+      }
+    },
+    [],
+  )
+
   // Global CMD+K shortcut
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
@@ -526,6 +572,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     settings,
     updateSettings,
     lastMessageFor,
+    getSharedMediaFor,
     loading,
     error,
   }

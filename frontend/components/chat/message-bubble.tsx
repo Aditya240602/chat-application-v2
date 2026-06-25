@@ -193,7 +193,11 @@ export function MessageBubble({
                       {message.attachment.size}
                     </p>
                   </div>
-                  <button
+                  <a
+                    href={message.attachment.url}
+                    download={message.attachment.name}
+                    target="_blank"
+                    rel="noopener noreferrer"
                     className={cn(
                       "ml-1 rounded-md p-1.5 transition-colors",
                       isMine
@@ -203,7 +207,7 @@ export function MessageBubble({
                     aria-label={`Download ${message.attachment.name}`}
                   >
                     <Download className="h-4 w-4" />
-                  </button>
+                  </a>
                 </div>
               )}
 

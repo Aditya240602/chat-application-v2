@@ -7,3 +7,5 @@ __pycache__/
 .env.local
 frontend/.env.local
 .vscode/
+backend/media/
+frontend/tsconfig.tsbuildinfo

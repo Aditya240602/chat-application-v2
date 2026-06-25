@@ -4,6 +4,7 @@ from django.db import models
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
+from rest_framework.parsers import MultiPartParser, FormParser, JSONParser
 
 from .models import Message, Block
 from .serializers import MessageSerializer
@@ -13,10 +14,12 @@ from accounts.throttling import SendMessageThrottle
 class MessageListCreateView(APIView):
     """
     View to list messages between users and create new messages.
-    Requires authentication.
+    Requires authentication. Accepts JSON for text-only messages, or
+    multipart/form-data when an attachment file is included.
     """
     permission_classes = [permissions.IsAuthenticated]
     throttle_classes = [SendMessageThrottle]
+    parser_classes = [JSONParser, MultiPartParser, FormParser]
 
     def get(self, request):
         """
@@ -272,3 +275,40 @@ class UnreadCountView(APIView):
 
         # Return the list of unread counts per user.
         return Response(data, status=200)
+
+
+class SharedMediaView(APIView):
+    """
+    View to get all attachments (images/files) exchanged with another user.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request):
+        """
+        GET /api/chat/shared_media/?user_id=2
+
+        Returns all messages between the current user and user_id that
+        have an attachment, most recent first.
+        """
+        other_user_id = request.query_params.get("user_id")
+        if not other_user_id:
+            return Response(
+                {"detail": "user_id query param is required"},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        try:
+            other_user = User.objects.get(id=other_user_id)
+        except User.DoesNotExist:
+            return Response(
+                {"detail": "User not found"},
+                status=status.HTTP_404_NOT_FOUND,
+            )
+
+        qs = Message.objects.filter(
+            sender__in=[request.user, other_user],
+            receiver__in=[request.user, other_user],
+        ).exclude(attachment="").order_by("-timestamp")
+
+        serializer = MessageSerializer(qs, many=True, context={"request": request})
+        return Response(serializer.data, status=status.HTTP_200_OK)

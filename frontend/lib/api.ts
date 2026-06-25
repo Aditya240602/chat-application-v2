@@ -39,6 +39,9 @@ export interface BackendMessage {
   sender_username: string
   receiver_username: string
   content: string
+  attachment_url: string | null
+  attachment_type: "image" | "file" | null
+  attachment_name: string | null
   timestamp: string
   is_read: boolean
 }
@@ -133,7 +136,8 @@ async function apiFetch<T>(
 ): Promise<T> {
   const access = getAccessToken()
   const headers = new Headers(options.headers)
-  headers.set("Content-Type", "application/json")
+  const isFormData = options.body instanceof FormData
+  if (!isFormData) headers.set("Content-Type", "application/json")
   if (access) headers.set("Authorization", `Bearer ${access}`)
 
   const res = await fetch(`${API_BASE}${path}`, { ...options, headers })
@@ -234,7 +238,18 @@ export async function getMessages(
 export async function sendMessage(
   receiverId: number,
   content: string,
+  file?: File,
 ): Promise<BackendMessage> {
+  if (file) {
+    const formData = new FormData()
+    formData.append("receiver", String(receiverId))
+    formData.append("content", content)
+    formData.append("attachment", file)
+    return apiFetch<BackendMessage>("/api/chat/messages/", {
+      method: "POST",
+      body: formData,
+    })
+  }
   return apiFetch<BackendMessage>("/api/chat/messages/", {
     method: "POST",
     body: JSON.stringify({ receiver: receiverId, content }),
@@ -262,6 +277,12 @@ export async function getBlockStatus(userId: number): Promise<BlockStatus> {
 
 export async function getUnreadCounts(): Promise<UnreadCount[]> {
   return apiFetch<UnreadCount[]>("/api/chat/unread_counts/")
+}
+
+// ---------- Shared media ----------
+
+export async function getSharedMedia(userId: number): Promise<BackendMessage[]> {
+  return apiFetch<BackendMessage[]>(`/api/chat/shared_media/?user_id=${userId}`)
 }
 
 export { ApiError }

@@ -25,7 +25,7 @@ ALLOWED_HOSTS = [
     "yashgarje31.pythonanywhere.com",
     "realtime-chatapp-frontend.vercel.app",
 ]
-
+BACKEND_BASE_URL = os.environ.get("BACKEND_BASE_URL", "http://localhost:8000")
 # Application definition
 
 INSTALLED_APPS = [
@@ -127,6 +127,13 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+
+MEDIA_URL = "/media/"
+MEDIA_ROOT = BASE_DIR / "media"
+
+# 5 MB max upload size for chat attachments
+DATA_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
+FILE_UPLOAD_MAX_MEMORY_SIZE = 5 * 1024 * 1024
 
 DEFAULT_AUTO_FIELD = "django.db.models.BigAutoField"
 

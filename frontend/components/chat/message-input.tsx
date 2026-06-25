@@ -48,9 +48,16 @@ export function MessageInput() {
     }
   }
 
+  const MAX_FILE_BYTES = 5 * 1024 * 1024 // matches backend DATA_UPLOAD_MAX_MEMORY_SIZE
+
   const handleFile = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
+    if (file.size > MAX_FILE_BYTES) {
+      alert("File is too large. Maximum size is 5 MB.")
+      e.target.value = ""
+      return
+    }
     const isImage = file.type.startsWith("image/")
     const url = isImage ? URL.createObjectURL(file) : undefined
     const sizeKb = file.size / 1024
@@ -64,6 +71,7 @@ export function MessageInput() {
         name: file.name,
         url,
         size,
+        file,
       },
       replyTo: replyTarget ?? undefined,
     })

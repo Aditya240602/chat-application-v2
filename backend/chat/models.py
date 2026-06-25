@@ -3,13 +3,27 @@ from django.contrib.auth.models import User
 
 
 class Message(models.Model):
+    ATTACHMENT_IMAGE = "image"
+    ATTACHMENT_FILE = "file"
+    ATTACHMENT_TYPE_CHOICES = [
+        (ATTACHMENT_IMAGE, "Image"),
+        (ATTACHMENT_FILE, "File"),
+    ]
+
     sender = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='sent_messages'
     )
     receiver = models.ForeignKey(
         User, on_delete=models.CASCADE, related_name='received_messages'
     )
-    content = models.TextField()
+    content = models.TextField(blank=True, default="")
+    attachment = models.FileField(
+        upload_to="chat_attachments/%Y/%m/", null=True, blank=True
+    )
+    attachment_type = models.CharField(
+        max_length=10, choices=ATTACHMENT_TYPE_CHOICES, null=True, blank=True
+    )
+    attachment_name = models.CharField(max_length=255, null=True, blank=True)
     timestamp = models.DateTimeField(auto_now_add=True)
     is_read = models.BooleanField(default=False)
 
@@ -17,6 +31,8 @@ class Message(models.Model):
         ordering = ['timestamp']  # oldest → newest
 
     def __str__(self):
+        if self.attachment:
+            return f"{self.sender.username} -> {self.receiver.username}: [attachment] {self.attachment_name}"
         return f"{self.sender.username} -> {self.receiver.username}: {self.content[:20]}"
 
 

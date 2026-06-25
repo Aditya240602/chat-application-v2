@@ -25,10 +25,12 @@ export type AttachmentType = "image" | "file"
 export interface Attachment {
   type: AttachmentType
   name: string
-  /** image src for image attachments */
+  /** image src for image attachments (local preview, or real URL once sent) */
   url?: string
   /** human readable size, e.g. "2.4 MB" */
   size?: string
+  /** raw File object, present only while the message is being composed/sent */
+  file?: File
 }
 
 export interface ReplyPreview {
