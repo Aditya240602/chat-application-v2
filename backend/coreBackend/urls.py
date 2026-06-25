@@ -25,5 +25,7 @@ urlpatterns = [
     path('api/chat/', include('chat.urls')),
 ]
 
-if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+# Serve uploaded media files directly from Django. Not ideal for high-traffic
+# production use (a dedicated file host like S3/Cloudinary scales better),
+# but appropriate for a demo deployment without that extra infrastructure.
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

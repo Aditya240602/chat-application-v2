@@ -25,7 +25,15 @@ ALLOWED_HOSTS = [
     "yashgarje31.pythonanywhere.com",
     "realtime-chatapp-frontend.vercel.app",
 ]
+# Comma-separated list of additional hosts, e.g. your-app.onrender.com
+_extra_hosts = os.environ.get("EXTRA_ALLOWED_HOSTS", "")
+if _extra_hosts:
+    ALLOWED_HOSTS += [h.strip() for h in _extra_hosts.split(",") if h.strip()]
+
+# Explicit base URL for building absolute media URLs. Avoids any ambiguity
+# from request.build_absolute_uri() picking up an unexpected Host header.
 BACKEND_BASE_URL = os.environ.get("BACKEND_BASE_URL", "http://localhost:8000")
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -44,6 +52,7 @@ INSTALLED_APPS = [
 MIDDLEWARE = [
     "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
@@ -57,10 +66,13 @@ CORS_ALLOWED_ORIGINS = [
     "https://real-time-chat-application-eta.vercel.app",
     "http://localhost:3000",
 ]
+_extra_origins = os.environ.get("EXTRA_CORS_ORIGINS", "")
+if _extra_origins:
+    CORS_ALLOWED_ORIGINS += [o.strip() for o in _extra_origins.split(",") if o.strip()]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://real-time-chat-application-eta.vercel.app",
-]
+] + [o.strip() for o in _extra_origins.split(",") if o.strip()]
 
 # CORS_ALLOW_ALL_ORIGINS = True
 
@@ -127,6 +139,11 @@ USE_TZ = True
 
 STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
+STORAGES = {
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
 MEDIA_URL = "/media/"
 MEDIA_ROOT = BASE_DIR / "media"
