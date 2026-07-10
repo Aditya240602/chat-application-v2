@@ -1,10 +1,13 @@
 "use client"
 
 import { useState } from "react"
-import { Moon, Sun, X } from "lucide-react"
+import { LogOut, Moon, Sun, X } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Avatar } from "@/components/avatar"
 import { useChat } from "@/context/chat-context"
+import { useAuth } from "@/context/auth-context"
+import { updateProfile, ApiError } from "@/lib/api"
+import { CHAT_BACKGROUNDS } from "@/lib/chat-backgrounds"
 
 function Toggle({
   checked,
@@ -46,10 +49,39 @@ export function SettingsPanel() {
     updateSettings,
     currentUser,
   } = useChat()
-  const [name, setName] = useState(currentUser.name)
+  const { logout, refreshUser } = useAuth()
+  const [displayName, setDisplayName] = useState(currentUser.name)
   const [role, setRole] = useState(currentUser.role ?? "")
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [saved, setSaved] = useState(false)
 
   if (!settingsOpen) return null
+
+  async function handleSave() {
+    setSaving(true)
+    setError(null)
+    setSaved(false)
+    try {
+      await updateProfile({ display_name: displayName, role })
+      await refreshUser()
+      setSaved(true)
+      setTimeout(() => setSaved(false), 2000)
+    } catch (err) {
+      setError(
+        err instanceof ApiError
+          ? "Couldn't save changes. Please try again."
+          : "Couldn't reach the server.",
+      )
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  function handleLogout() {
+    setSettingsOpen(false)
+    logout()
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
@@ -78,14 +110,14 @@ export function SettingsPanel() {
             </h3>
             <div className="flex items-center gap-4">
               <Avatar
-                name={name || currentUser.name}
+                name={displayName || currentUser.name}
                 color={currentUser.color}
                 size="lg"
               />
               <div className="flex-1 space-y-2">
                 <input
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
+                  value={displayName}
+                  onChange={(e) => setDisplayName(e.target.value)}
                   placeholder="Display name"
                   className="w-full rounded-lg border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-brand/50"
                 />
@@ -97,6 +129,12 @@ export function SettingsPanel() {
                 />
               </div>
             </div>
+            {error && (
+              <p className="mt-2 text-xs text-destructive">{error}</p>
+            )}
+            {saved && (
+              <p className="mt-2 text-xs text-online">Saved.</p>
+            )}
           </section>
 
           {/* Appearance */}
@@ -130,11 +168,57 @@ export function SettingsPanel() {
             </div>
           </section>
 
+          {/* Chat background */}
+          <section>
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Chat Background
+            </h3>
+            <p className="mb-2 text-[11px] text-muted-foreground">
+              Local to this device only.
+            </p>
+            <div className="grid grid-cols-4 gap-2">
+              {CHAT_BACKGROUNDS.map((bgOption) => (
+                <button
+                  key={bgOption.id}
+                  onClick={() => {
+                    console.log("Clicked background:", bgOption.id)
+                    updateSettings({ chatBackground: bgOption.id })
+                    console.log("After update, localStorage:", localStorage.getItem("pulse_settings"))
+                  }}
+                  className={cn(
+                    "flex flex-col items-center gap-1.5 rounded-lg border p-1.5 transition-colors",
+                    settings.chatBackground === bgOption.id
+                      ? "border-brand"
+                      : "border-border hover:border-brand/40",
+                  )}
+                  aria-label={bgOption.label}
+                >
+                  <span
+                    className="h-10 w-full rounded-md border border-border/50"
+                    style={{
+                      background:
+                        bgOption.value === "none"
+                          ? "var(--surface)"
+                          : bgOption.value,
+                    }}
+                  />
+                  <span className="text-[10px] text-muted-foreground">
+                    {bgOption.label}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </section>
+
           {/* Notifications */}
           <section>
             <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Notifications
             </h3>
+            <p className="mb-2 text-[11px] text-muted-foreground">
+              These preferences are local to this device and aren't synced
+              elsewhere yet.
+            </p>
             <div className="space-y-1">
               {[
                 {
@@ -172,6 +256,20 @@ export function SettingsPanel() {
               ))}
             </div>
           </section>
+
+          {/* Account */}
+          <section>
+            <h3 className="mb-3 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+              Account
+            </h3>
+            <button
+              onClick={handleLogout}
+              className="flex w-full items-center gap-2 rounded-lg border border-border px-3 py-2.5 text-sm text-destructive transition-colors hover:bg-destructive/10"
+            >
+              <LogOut className="h-4 w-4" />
+              Log out
+            </button>
+          </section>
         </div>
 
         <div className="flex justify-end gap-2 border-t border-border px-5 py-4">
@@ -182,10 +280,11 @@ export function SettingsPanel() {
             Cancel
           </button>
           <button
-            onClick={() => setSettingsOpen(false)}
-            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90"
+            onClick={handleSave}
+            disabled={saving}
+            className="rounded-lg bg-brand px-4 py-2 text-sm font-medium text-brand-foreground transition-opacity hover:opacity-90 disabled:opacity-60"
           >
-            Save changes
+            {saving ? "Saving…" : "Save changes"}
           </button>
         </div>
       </div>

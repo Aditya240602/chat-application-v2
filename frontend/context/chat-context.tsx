@@ -34,8 +34,9 @@ interface Settings {
   notifications: boolean
   sounds: boolean
   readReceipts: boolean
+  /** CSS background value (color or gradient), local to this device only. */
+  chatBackground: string
 }
-
 interface ChatContextValue {
   theme: Theme
   toggleTheme: () => void
@@ -144,9 +145,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
 
   const [users, setUsers] = useState<Record<string, User>>({})
   const [conversations, setConversations] = useState<Conversation[]>([])
-  const [messagesByConversation, setMessagesByConversation] = useState<
-    Record<string, Message[]>
-  >({})
+  const [messagesByConversation, setMessagesByConversation] = useState<Record<string, Message[]>>({})
   const [activeConversationId, setActiveConversationId] = useState<string>("")
   const [typingConversationId] = useState<string | null>(null)
   const [replyTarget, setReplyTarget] = useState<ReplyPreview | null>(null)
@@ -161,6 +160,7 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
     notifications: true,
     sounds: true,
     readReceipts: true,
+    chatBackground: "none",
   })
 
   const [loading, setLoading] = useState(true)
@@ -171,6 +171,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const lastIdRef = useRef<Record<string, number>>({})
   const activeRef = useRef(activeConversationId)
   activeRef.current = activeConversationId
+  // Mirrors messagesByConversation for reading current state inside interval
+  // callbacks without creating a stale closure over an old value.
+  const messagesByConvRef = useRef<Record<string, Message[]>>({})
+  messagesByConvRef.current = messagesByConversation
 
   const currentUser: User = authUser
     ? {
@@ -324,6 +328,42 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         // Silent fail on a single poll tick — next tick will retry.
       }
     }, 3000)
+
+    return () => clearInterval(interval)
+  }, [authUser, activeConversationId])
+
+  // ---- Read-receipt sync: every 5s, re-fetch the full thread for the active
+  // conversation so is_read flips on already-displayed messages (set by the
+  // backend when the *other* user views them) are reflected here too. The
+  // 3s "new messages" poll above only catches brand-new messages, not status
+  // changes on ones already shown, so this covers that gap separately. ----
+  useEffect(() => {
+    if (!authUser || !activeConversationId) return
+    const currentUserId = authUser.id
+
+    const interval = setInterval(async () => {
+      const convId = activeRef.current
+      if (!convId) return
+      // Only bother re-syncing if I have sent messages still marked unread —
+      // avoids a wasted full-thread fetch once everything is already read.
+      const hasUnreadSent = (messagesByConvRef.current[convId] ?? []).some(
+        (m) => m.senderId === "me" && m.status !== "read",
+      )
+      if (!hasUnreadSent) return
+      try {
+        const msgs = await getMessages(Number(convId))
+        const uiMsgs = msgs.map((m) => toUiMessage(m, currentUserId))
+        setMessagesByConversation((prev) => ({ ...prev, [convId]: uiMsgs }))
+        if (msgs.length > 0) {
+          lastIdRef.current[convId] = Math.max(
+            lastIdRef.current[convId] ?? 0,
+            msgs[msgs.length - 1].id,
+          )
+        }
+      } catch {
+        // Silent fail — next tick retries.
+      }
+    }, 5000)
 
     return () => clearInterval(interval)
   }, [authUser, activeConversationId])

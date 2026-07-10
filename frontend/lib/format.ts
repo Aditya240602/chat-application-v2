@@ -21,14 +21,12 @@ const MONTHS = [
 ]
 
 /**
- * Short clock time, e.g. "14:32".
- * Uses UTC so the server and client render identical strings (avoids
- * hydration mismatches from differing timezones/locales).
+ * Short clock time in the viewer's local timezone, e.g. "14:32".
  */
 export function formatTime(iso: string): string {
   const d = new Date(iso)
-  const h = String(d.getUTCHours()).padStart(2, "0")
-  const m = String(d.getUTCMinutes()).padStart(2, "0")
+  const h = String(d.getHours()).padStart(2, "0")
+  const m = String(d.getMinutes()).padStart(2, "0")
   return `${h}:${m}`
 }
 
@@ -42,12 +40,12 @@ export function formatRelative(iso: string): string {
   const hours = Math.floor(mins / 60)
   if (hours < 24) return `${hours}h`
   const days = Math.floor(hours / 24)
-  if (days < 7) return DAYS[date.getUTCDay()]
+  if (days < 7) return DAYS[date.getDay()]
   return `${MONTHS[date.getUTCMonth()]} ${date.getUTCDate()}`
 }
 
-/** Full day label for date dividers, e.g. "Jun 22". */
+/** Full day label for date dividers, e.g. "Jun 22" (viewer's local timezone). */
 export function formatDayLabel(iso: string): string {
   const d = new Date(iso)
-  return `${MONTHS[d.getUTCMonth()]} ${d.getUTCDate()}`
+  return `${MONTHS[d.getMonth()]} ${d.getDate()}`
 }

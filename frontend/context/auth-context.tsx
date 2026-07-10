@@ -21,6 +21,7 @@ interface AuthContextValue {
   loading: boolean
   login: (username: string, password: string) => Promise<void>
   logout: () => void
+  refreshUser: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null)
@@ -66,8 +67,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push("/login")
   }, [router])
 
+  const refreshUser = useCallback(async () => {
+    try {
+      const me = await getCurrentUser()
+      setUser(me)
+    } catch {
+      // If this fails the token is likely invalid; apiFetch's 401 handling
+      // will already have redirected to /login.
+    }
+  }, [])
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, refreshUser }}>
       {children}
     </AuthContext.Provider>
   )

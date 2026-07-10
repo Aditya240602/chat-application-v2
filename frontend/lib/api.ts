@@ -18,6 +18,8 @@ export interface BackendUser {
   id: number
   username: string
   email: string
+  display_name: string
+  role: string
 }
 
 export interface BackendUserListItem extends BackendUser {
@@ -213,7 +215,14 @@ export function logout() {
 export async function getCurrentUser(): Promise<BackendUser> {
   return apiFetch<BackendUser>("/api/me/")
 }
-
+export async function updateProfile(
+  data: Partial<Pick<BackendUser, "display_name" | "role">>,
+): Promise<BackendUser> {
+  return apiFetch<BackendUser>("/api/me/", {
+    method: "PATCH",
+    body: JSON.stringify(data),
+  })
+}
 // ---------- Users / presence ----------
 
 export async function getUsers(): Promise<BackendUserListItem[]> {

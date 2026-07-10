@@ -164,52 +164,61 @@ export function MessageBubble({
                 />
               )}
 
-              {/* File attachment */}
-              {message.attachment?.type === "file" && (
-                <div
-                  className={cn(
-                    "flex items-center gap-3 rounded-lg px-1 py-1",
-                    isMine ? "" : "",
-                  )}
-                >
+              {/* File attachment (voice messages get a real audio player) */}
+              {message.attachment?.type === "file" &&
+                (message.attachment.name.startsWith("voice-message-") ? (
+                  <div className="flex min-w-[220px] items-center gap-2 py-1">
+                    <audio
+                      controls
+                      src={message.attachment.url}
+                      className="h-9 w-full max-w-[260px]"
+                    />
+                  </div>
+                ) : (
                   <div
                     className={cn(
-                      "flex h-10 w-10 items-center justify-center rounded-lg",
-                      isMine ? "bg-white/20" : "bg-brand/15 text-brand",
+                      "flex items-center gap-3 rounded-lg px-1 py-1",
+                      isMine ? "" : "",
                     )}
                   >
-                    <FileText className="h-5 w-5" />
-                  </div>
-                  <div className="min-w-0">
-                    <p className="truncate text-sm font-medium">
-                      {message.attachment.name}
-                    </p>
-                    <p
+                    <div
                       className={cn(
-                        "text-[11px]",
-                        isMine ? "text-white/70" : "text-muted-foreground",
+                        "flex h-10 w-10 items-center justify-center rounded-lg",
+                        isMine ? "bg-white/20" : "bg-brand/15 text-brand",
                       )}
                     >
-                      {message.attachment.size}
-                    </p>
+                      <FileText className="h-5 w-5" />
+                    </div>
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">
+                        {message.attachment.name}
+                      </p>
+                      <p
+                        className={cn(
+                          "text-[11px]",
+                          isMine ? "text-white/70" : "text-muted-foreground",
+                        )}
+                      >
+                        {message.attachment.size}
+                      </p>
+                    </div>
+                    <a
+                      href={message.attachment.url}
+                      download={message.attachment.name}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={cn(
+                        "ml-1 rounded-md p-1.5 transition-colors",
+                        isMine
+                          ? "hover:bg-white/20"
+                          : "hover:bg-secondary text-muted-foreground",
+                      )}
+                      aria-label={`Download ${message.attachment.name}`}
+                    >
+                      <Download className="h-4 w-4" />
+                    </a>
                   </div>
-                  <a
-                    href={message.attachment.url}
-                    download={message.attachment.name}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={cn(
-                      "ml-1 rounded-md p-1.5 transition-colors",
-                      isMine
-                        ? "hover:bg-white/20"
-                        : "hover:bg-secondary text-muted-foreground",
-                    )}
-                    aria-label={`Download ${message.attachment.name}`}
-                  >
-                    <Download className="h-4 w-4" />
-                  </a>
-                </div>
-              )}
+                ))}
 
               {/* Text */}
               {message.text && (

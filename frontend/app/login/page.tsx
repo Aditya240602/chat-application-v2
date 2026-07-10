@@ -12,7 +12,6 @@ export default function LoginPage() {
   const [username, setUsername] = useState("")
   const [password, setPassword] = useState("")
   const [email, setEmail] = useState("")
-  const [secret, setSecret] = useState("")
   const [error, setError] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
 
@@ -22,7 +21,7 @@ export default function LoginPage() {
     setSubmitting(true)
     try {
       if (mode === "register") {
-        await apiRegister(username, password, secret, email)
+        await apiRegister(username, password, email)
         // Registration succeeded — log straight in with the same credentials.
         await login(username, password)
       } else {
@@ -58,7 +57,7 @@ export default function LoginPage() {
         <p className="mb-6 text-sm text-muted-foreground">
           {mode === "login"
             ? "Sign in to continue to Pulse."
-            : "You'll need a registration code to sign up."}
+            : "Sign up to start chatting."}
         </p>
 
         <form onSubmit={handleSubmit} className="flex flex-col gap-3">
@@ -87,16 +86,6 @@ export default function LoginPage() {
             required
             className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
           />
-          {mode === "register" && (
-            <input
-              type="text"
-              placeholder="Registration code"
-              value={secret}
-              onChange={(e) => setSecret(e.target.value)}
-              required
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
-            />
-          )}
 
           {error && (
             <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">

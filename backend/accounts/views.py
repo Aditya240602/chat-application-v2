@@ -43,6 +43,20 @@ class CurrentUserView(APIView):
     def get(self, request):
         serializer = UserSerializer(request.user)
         return Response(serializer.data)
+    def patch(self, request):
+        """
+        PATCH /api/me/
+        body: { "display_name": "...", "role": "..." }
+        Only display_name and role are editable here — username/email are
+        left alone to avoid touching auth-identity fields casually.
+        """
+        serializer = UserSerializer(
+            request.user, data=request.data, partial=True
+        )
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class UserListView(APIView):
