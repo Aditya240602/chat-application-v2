@@ -5,6 +5,7 @@ import { ArrowDown } from "lucide-react"
 import { MessageBubble } from "./message-bubble"
 import { TypingIndicator } from "./typing-indicator"
 import { useChat } from "@/context/chat-context"
+import { CHAT_BACKGROUNDS } from "@/lib/chat-backgrounds"
 
 export function MessageList() {
   const {
@@ -13,6 +14,7 @@ export function MessageList() {
     activeConversationId,
     typingConversationId,
     users,
+    settings,
   } = useChat()
   const containerRef = useRef<HTMLDivElement>(null)
   const bottomRef = useRef<HTMLDivElement>(null)
@@ -70,8 +72,13 @@ export function MessageList() {
     }
   }
 
+  const activeBg = CHAT_BACKGROUNDS.find((b) => b.id === settings.chatBackground)
+  const bgStyle = activeBg && activeBg.value !== "none"
+    ? { background: activeBg.value }
+    : undefined
+
   return (
-    <div className="relative flex-1 overflow-hidden">
+    <div className="relative flex-1 overflow-hidden" style={bgStyle}>
       <div
         ref={containerRef}
         onScroll={handleScroll}

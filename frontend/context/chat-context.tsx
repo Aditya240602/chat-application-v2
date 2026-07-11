@@ -156,11 +156,35 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   const [settingsOpen, setSettingsOpen] = useState(false)
 
   const [notifications, setNotifications] = useState<NotificationItem[]>([])
-  const [settings, setSettings] = useState<Settings>({
-    notifications: true,
-    sounds: true,
-    readReceipts: true,
-    chatBackground: "none",
+  const [settings, setSettings] = useState<Settings>(() => {
+    if (typeof window === "undefined") {
+      return {
+        notifications: true,
+        sounds: true,
+        readReceipts: true,
+        chatBackground: "none",
+      }
+    }
+    try {
+      const stored = localStorage.getItem("pulse_settings")
+      if (stored) {
+        return {
+          notifications: true,
+          sounds: true,
+          readReceipts: true,
+          chatBackground: "none",
+          ...JSON.parse(stored),
+        }
+      }
+    } catch {
+      // ignore parse errors
+    }
+    return {
+      notifications: true,
+      sounds: true,
+      readReceipts: true,
+      chatBackground: "none",
+    }
   })
 
   const [loading, setLoading] = useState(true)
@@ -175,6 +199,10 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   // callbacks without creating a stale closure over an old value.
   const messagesByConvRef = useRef<Record<string, Message[]>>({})
   messagesByConvRef.current = messagesByConversation
+  const settingsRef = useRef(settings)
+  settingsRef.current = settings
+  const usersRef = useRef(users)
+  usersRef.current = users
 
   const currentUser: User = authUser
     ? {
@@ -324,6 +352,19 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
           [convId]: [...(prev[convId] ?? []), ...uiMsgs],
         }))
         lastIdRef.current[convId] = msgs[msgs.length - 1].id
+
+        // Browser notifications for incoming messages (not from me)
+        const settingsSnap = settingsRef.current
+        if (settingsSnap.notifications && typeof window !== "undefined") {
+          const incoming = uiMsgs.filter((m) => m.senderId !== "me")
+          if (incoming.length > 0 && Notification.permission === "granted") {
+            const senderName = usersRef.current[incoming[0].senderId]?.name ?? "Someone"
+            new Notification(`New message from ${senderName}`, {
+              body: incoming[0].text || "Sent an attachment",
+              icon: "/icon-dark-32x32.png",
+            })
+          }
+        }
       } catch {
         // Silent fail on a single poll tick — next tick will retry.
       }
@@ -522,7 +563,22 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
   }, [])
 
   const updateSettings = useCallback((partial: Partial<Settings>) => {
-    setSettings((prev) => ({ ...prev, ...partial }))
+    // If enabling notifications, request browser permission first
+    if (partial.notifications === true && typeof window !== "undefined") {
+      if (Notification.permission === "default") {
+        Notification.requestPermission()
+      }
+    }
+    setSettings((prev) => {
+      const next = { ...prev, ...partial }
+      try {
+        localStorage.setItem("pulse_settings", JSON.stringify(next))
+      } catch {
+        // localStorage unavailable (e.g. private browsing) — setting still
+        // applies for this session, it just won't persist across reloads.
+      }
+      return next
+    })
   }, [])
 
   const lastMessageFor = useCallback(

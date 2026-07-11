@@ -24,16 +24,33 @@ function Toggle({
       aria-checked={checked}
       aria-label={label}
       onClick={() => onChange(!checked)}
-      className={cn(
-        "relative h-6 w-11 shrink-0 rounded-full transition-colors duration-150",
-        checked ? "bg-brand" : "bg-secondary",
-      )}
+      style={{
+        width: 44,
+        height: 26,
+        borderRadius: 13,
+        padding: 3,
+        border: "none",
+        cursor: "pointer",
+        backgroundColor: checked ? "#4f8ef7" : "#3f3f46",
+        transition: "background-color 0.2s ease",
+        display: "flex",
+        alignItems: "center",
+        flexShrink: 0,
+        position: "relative",
+      }}
     >
       <span
-        className={cn(
-          "absolute top-0.5 h-5 w-5 rounded-full bg-white shadow transition-transform duration-150",
-          checked ? "translate-x-[22px]" : "translate-x-0.5",
-        )}
+        style={{
+          width: 20,
+          height: 20,
+          borderRadius: "50%",
+          backgroundColor: "white",
+          boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+          transform: checked ? "translateX(18px)" : "translateX(0px)",
+          transition: "transform 0.2s ease",
+          display: "block",
+          flexShrink: 0,
+        }}
       />
     </button>
   )
@@ -181,9 +198,7 @@ export function SettingsPanel() {
                 <button
                   key={bgOption.id}
                   onClick={() => {
-                    console.log("Clicked background:", bgOption.id)
                     updateSettings({ chatBackground: bgOption.id })
-                    console.log("After update, localStorage:", localStorage.getItem("pulse_settings"))
                   }}
                   className={cn(
                     "flex flex-col items-center gap-1.5 rounded-lg border p-1.5 transition-colors",
