@@ -1,7 +1,7 @@
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status, permissions
-
+from django.db.models import Q, OuterRef, Subquery
 from django.contrib.auth.models import User
 from django.conf import settings
 
@@ -64,64 +64,75 @@ class UserListView(APIView):
 
     def get(self, request):
         current_user = request.user
-        others = User.objects.exclude(id=current_user.id)
+
+        # Subquery: latest message exchanged with each user
+        latest_messages = (
+            Message.objects.filter(
+                (
+                    Q(sender=current_user, receiver=OuterRef("pk")) |
+                    Q(sender=OuterRef("pk"), receiver=current_user)
+                )
+            )
+            .order_by("-timestamp")
+        )
+
+        users = (
+            User.objects
+            .exclude(id=current_user.id)
+            .annotate(
+                last_message=Subquery(
+                    latest_messages.values("content")[:1]
+                ),
+                last_message_time=Subquery(
+                    latest_messages.values("timestamp")[:1]
+                ),
+            )
+            .only("id", "username", "email")
+            .order_by("username")
+        )
 
         result = []
 
-        for user in others:
-            # Get last message between current_user and this user
-            last_msg = (
-                Message.objects.filter(
-                    sender__in=[current_user, user],
-                    receiver__in=[current_user, user],
-                )
-                .order_by("-timestamp")
-                .first()
-            )
+        for user in users:
 
-            if last_msg:
-                text = last_msg.content
-                if len(text) > 40:
-                    text = text[:40] + "…"
+            text = user.last_message or ""
 
-                last_message = text
-                last_message_time = last_msg.timestamp
-            else:
-                last_message = ""
-                last_message_time = None
+            if len(text) > 40:
+                text = text[:40] + "…"
 
-            result.append(
-                {
-                    "id": user.id,
-                    "username": user.username,
-                    "email": user.email,
-                    "last_message": last_message,
-                    "last_message_time": last_message_time,
-                }
-            )
+            result.append({
+                "id": user.id,
+                "username": user.username,
+                "email": user.email,
+                "last_message": text,
+                "last_message_time": user.last_message_time,
+            })
 
-        return Response(result, status=200)
-
+        return Response(result)
 
 class UserPresenceView(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        users = User.objects.exclude(id=request.user.id)
-        data = []
-
-        for user in users:
-            profile, _ = Profile.objects.get_or_create(user=user)
-            online = profile.online
-            last_seen = profile.last_seen
-
-            data.append(
-                {
-                    "id": user.id,
-                    "username": user.username,
-                    "online": online,
-                    "last_seen": last_seen,
-                }
+        users = (
+            User.objects
+            .exclude(id=request.user.id)
+            .select_related("profile")
+            .only(
+                "id",
+                "username",
+                "profile__last_seen",
             )
+        )
 
-        return Response(data, status=200)
+        data = [
+            {
+                "id": user.id,
+                "username": user.username,
+                "online": user.profile.online,
+                "last_seen": user.profile.last_seen,
+            }
+            for user in users
+        ]
+
+        return Response(data)

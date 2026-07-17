@@ -28,7 +28,13 @@ class Message(models.Model):
     is_read = models.BooleanField(default=False)
 
     class Meta:
-        ordering = ['timestamp']  # oldest → newest
+        ordering = ["timestamp"]
+
+        indexes = [
+            models.Index(fields=["sender", "receiver"]),
+            models.Index(fields=["receiver", "is_read"]),
+            models.Index(fields=["timestamp"]),
+        ]
 
     def __str__(self):
         if self.attachment:

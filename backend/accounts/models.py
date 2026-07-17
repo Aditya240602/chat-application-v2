@@ -4,7 +4,11 @@ from django.utils import timezone
 
 
 class Profile(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    user = models.OneToOneField(
+        User,
+        on_delete=models.CASCADE,
+        related_name="profile",
+    )
     last_seen = models.DateTimeField(null=True, blank=True)
 
     def __str__(self):

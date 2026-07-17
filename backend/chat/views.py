@@ -51,11 +51,16 @@ class MessageListCreateView(APIView):
         user = request.user
 
         # Fetch messages where the sender and receiver are the two users.
-        qs = Message.objects.filter(
-            sender__in=[user, other_user],
-            receiver__in=[user, other_user],
-        ).order_by("id")
-
+        qs = (
+            Message.objects
+            .select_related("sender", "receiver")
+            .filter(
+                sender__in=[request.user, other_user],
+                receiver__in=[request.user, other_user],
+            )
+            .exclude(attachment="")
+            .order_by("-timestamp")
+        )
         # Mark all messages FROM otherUser TO currentUser as read
         Message.objects.filter(
             sender=other_user,
@@ -67,8 +72,15 @@ class MessageListCreateView(APIView):
         if after_id:
             qs = qs.filter(id__gt=after_id)
 
-        serializer = MessageSerializer(qs, many=True)
+        # qs = qs.order_by("-id")[:50]
+        # qs = reversed(list(qs))
         # Return the serialized messages.
+        serializer = MessageSerializer(
+            qs,
+            many=True,
+            context={"request": request},
+        )
+
         return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
