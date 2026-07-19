@@ -34,8 +34,8 @@ export function Sidebar() {
     <aside className="flex h-full w-full flex-col bg-sidebar text-sidebar-foreground md:w-60 md:border-r md:border-sidebar-border">
       {/* Logo / header */}
       <div className="flex items-center justify-between px-4 pt-4 pb-3">
-        <div className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-brand text-brand-foreground">
+        <div className="flex items-center gap-2.5">
+          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-gradient text-brand-foreground glow-brand">
             <svg
               viewBox="0 0 24 24"
               className="h-4 w-4"
@@ -49,7 +49,7 @@ export function Sidebar() {
               <path d="M3 12h4l2 5 4-12 2 7h6" />
             </svg>
           </div>
-          <span className="text-[15px] font-semibold tracking-tight">
+          <span className="font-heading text-[15px] font-semibold tracking-tight">
             Pulse
           </span>
         </div>
@@ -66,7 +66,7 @@ export function Sidebar() {
       <div className="px-3 pb-3">
         <button
           onClick={() => setSearchOpen(true)}
-          className="flex w-full items-center gap-2 rounded-lg border border-sidebar-border bg-background/40 px-3 py-2 text-left text-muted-foreground transition-colors hover:border-brand/40"
+          className="glass flex w-full items-center gap-2 rounded-xl px-3 py-2 text-left text-muted-foreground transition-all hover:border-[color-mix(in_srgb,var(--brand-to)_45%,transparent)]"
         >
           <Search className="h-4 w-4" />
           <span className="flex-1 text-xs">Search messages…</span>
@@ -80,7 +80,7 @@ export function Sidebar() {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             placeholder="Filter conversations"
-            className="w-full rounded-lg border border-transparent bg-sidebar-accent/50 py-2 pl-8 pr-3 text-xs outline-none transition-colors placeholder:text-muted-foreground focus:border-brand/40"
+            className="w-full rounded-xl border border-transparent bg-sidebar-accent/50 py-2 pl-8 pr-3 text-xs outline-none transition-colors placeholder:text-muted-foreground focus:border-[color-mix(in_srgb,var(--brand-to)_45%,transparent)]"
           />
         </div>
       </div>

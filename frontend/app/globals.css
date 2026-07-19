@@ -1,3 +1,4 @@
+@import url('https://api.fontshare.com/v2/css?f[]=satoshi@700,600,500,400&f[]=general-sans@600,500,400&display=swap');
 @import 'tailwindcss';
 @import 'tw-animate-css';
 @import 'shadcn/tailwind.css';
@@ -5,8 +6,8 @@
 @custom-variant dark (&:is(.dark *));
 
 @theme inline {
-  --font-heading: var(--font-sans);
-  --font-sans: var(--font-geist-sans), 'Geist Fallback';
+  --font-heading: 'Satoshi', var(--font-sans);
+  --font-sans: 'General Sans', var(--font-geist-sans), 'Geist Fallback';
   --font-mono: var(--font-geist-mono), 'Geist Mono Fallback';
 
   --color-background: var(--background);
@@ -30,6 +31,8 @@
 
   --color-brand: var(--brand);
   --color-brand-foreground: var(--brand-foreground);
+  --color-brand-from: var(--brand-from);
+  --color-brand-to: var(--brand-to);
   --color-bubble-in: var(--bubble-in);
   --color-bubble-in-foreground: var(--bubble-in-foreground);
   --color-online: var(--online);
@@ -40,11 +43,11 @@
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent: var(--sidebar-accent);
 
-  --radius-sm: calc(var(--radius) * 0.6);
-  --radius-md: calc(var(--radius) * 0.8);
-  --radius-lg: var(--radius);
-  --radius-xl: calc(var(--radius) * 1.4);
-  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-sm: 12px;
+  --radius-md: 16px;
+  --radius-lg: 20px;
+  --radius-xl: 24px;
+  --radius-2xl: 28px;
 }
 
 /* Light mode */
@@ -87,36 +90,38 @@
 /* Dark mode (default) */
 .dark {
   color-scheme: dark;
-  --background: #0f0f0f;
-  --foreground: #fafafa;
-  --surface: #1a1a1a;
-  --card: #1a1a1a;
-  --card-foreground: #fafafa;
-  --popover: #1a1a1a;
-  --popover-foreground: #fafafa;
-  --primary: #4f8ef7;
+  --background: #0b0b0b;
+  --foreground: #f5f5f4;
+  --surface: #141414;
+  --card: #151515;
+  --card-foreground: #f5f5f4;
+  --popover: #161616;
+  --popover-foreground: #f5f5f4;
+  --primary: #ff3d5e;
   --primary-foreground: #ffffff;
-  --secondary: #2a2a2a;
-  --secondary-foreground: #fafafa;
-  --muted: #1e1e1e;
-  --muted-foreground: #8a8a8a;
-  --accent: #1e2738;
-  --accent-foreground: #fafafa;
-  --destructive: #ff6166;
-  --border: #2a2a2a;
-  --input: #2a2a2a;
-  --ring: #4f8ef7;
+  --secondary: #1c1c1c;
+  --secondary-foreground: #f5f5f4;
+  --muted: #171717;
+  --muted-foreground: #8a8a8e;
+  --accent: #1e1613;
+  --accent-foreground: #f5f5f4;
+  --destructive: #ff5470;
+  --border: #232323;
+  --input: #1c1c1c;
+  --ring: #ff5e3a;
 
-  --brand: #4f8ef7;
+  --brand: #ff5e3a;
   --brand-foreground: #ffffff;
-  --bubble-in: #1e1e1e;
-  --bubble-in-foreground: #fafafa;
+  --brand-from: #ff5e3a;
+  --brand-to: #ff2e63;
+  --bubble-in: #191919;
+  --bubble-in-foreground: #f5f5f4;
   --online: #2ecc71;
 
-  --sidebar: #141414;
-  --sidebar-foreground: #fafafa;
-  --sidebar-border: #2a2a2a;
-  --sidebar-accent: #1e1e1e;
+  --sidebar: #101010;
+  --sidebar-foreground: #f5f5f4;
+  --sidebar-border: #202020;
+  --sidebar-accent: #1a1a1a;
 }
 
 @layer base {
@@ -130,6 +135,42 @@
   }
   html {
     @apply font-sans;
+  }
+  h1,
+  h2,
+  h3,
+  .font-heading {
+    font-family: var(--font-heading);
+    letter-spacing: -0.02em;
+  }
+}
+
+@layer utilities {
+  .bg-brand-gradient {
+    background-image: linear-gradient(
+      135deg,
+      var(--brand-from) 0%,
+      var(--brand-to) 100%
+    );
+  }
+  .text-brand-gradient {
+    background-image: linear-gradient(
+      135deg,
+      var(--brand-from) 0%,
+      var(--brand-to) 100%
+    );
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+  }
+  .glass {
+    background: color-mix(in srgb, var(--card) 72%, transparent);
+    backdrop-filter: blur(20px) saturate(140%);
+    -webkit-backdrop-filter: blur(20px) saturate(140%);
+    border: 1px solid color-mix(in srgb, white 6%, transparent);
+  }
+  .glow-brand {
+    box-shadow: 0 8px 30px -8px color-mix(in srgb, var(--brand-to) 55%, transparent);
   }
 }
 
@@ -196,6 +237,21 @@
 }
 .animate-badge-pulse {
   animation: badge-pulse 400ms ease;
+}
+
+@keyframes ping-slow {
+  0% {
+    transform: scale(1);
+    opacity: 0.5;
+  }
+  80%,
+  100% {
+    transform: scale(1.4);
+    opacity: 0;
+  }
+}
+.animate-ping-slow {
+  animation: ping-slow 2.2s cubic-bezier(0, 0, 0.2, 1) infinite;
 }
 
 @keyframes typing-dot {

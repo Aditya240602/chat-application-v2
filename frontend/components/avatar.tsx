@@ -37,11 +37,18 @@ export function Avatar({
   showStatus = false,
   className,
 }: AvatarProps) {
+  const isOnline = showStatus && status === "online"
   return (
     <div className={cn("relative shrink-0", className)}>
+      {isOnline && (
+        <span
+          aria-hidden
+          className="absolute inset-0 rounded-full bg-brand-gradient opacity-60 animate-ping-slow"
+        />
+      )}
       <div
         className={cn(
-          "flex items-center justify-center rounded-full font-semibold text-white overflow-hidden select-none",
+          "relative flex items-center justify-center rounded-full font-semibold text-white overflow-hidden select-none ring-2 ring-[var(--surface)]",
           sizeMap[size],
         )}
         style={imageUrl ? undefined : { backgroundColor: color }}

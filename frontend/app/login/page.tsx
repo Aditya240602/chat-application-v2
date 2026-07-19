@@ -42,19 +42,31 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background px-4">
-      <div className="w-full max-w-sm rounded-xl border border-border bg-card p-8 shadow-sm">
-        <div className="mb-6 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary text-primary-foreground font-bold">
+    <div className="dark relative flex min-h-screen items-center justify-center overflow-hidden bg-background px-4">
+      {/* Ambient gradient glow */}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -top-40 left-1/2 h-[520px] w-[520px] -translate-x-1/2 rounded-full opacity-30 blur-[120px] bg-brand-gradient"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute bottom-[-160px] right-[-120px] h-[360px] w-[360px] rounded-full opacity-20 blur-[100px] bg-brand-gradient"
+      />
+
+      <div className="glass relative w-full max-w-sm rounded-2xl p-8 shadow-2xl animate-message-in">
+        <div className="mb-8 flex items-center gap-2.5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-gradient text-sm font-bold text-white glow-brand">
             P
           </div>
-          <span className="text-lg font-semibold">Pulse</span>
+          <span className="font-heading text-lg font-semibold tracking-tight">
+            Pulse
+          </span>
         </div>
 
-        <h1 className="mb-1 text-xl font-semibold">
+        <h1 className="mb-1.5 font-heading text-2xl font-bold tracking-tight">
           {mode === "login" ? "Welcome back" : "Create an account"}
         </h1>
-        <p className="mb-6 text-sm text-muted-foreground">
+        <p className="mb-7 text-sm text-muted-foreground">
           {mode === "login"
             ? "Sign in to continue to Pulse."
             : "Sign up to start chatting."}
@@ -67,7 +79,7 @@ export default function LoginPage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             required
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+            className="rounded-xl border border-border bg-input/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-[var(--brand-to)]"
           />
           {mode === "register" && (
             <input
@@ -75,7 +87,7 @@ export default function LoginPage() {
               placeholder="Email (optional)"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+              className="rounded-xl border border-border bg-input/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-[var(--brand-to)]"
             />
           )}
           <input
@@ -84,11 +96,11 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
-            className="rounded-md border border-border bg-background px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary"
+            className="rounded-xl border border-border bg-input/60 px-4 py-2.5 text-sm outline-none transition-colors placeholder:text-muted-foreground focus:border-transparent focus:ring-2 focus:ring-[var(--brand-to)]"
           />
 
           {error && (
-            <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+            <p className="rounded-xl bg-destructive/10 px-3 py-2 text-sm text-destructive">
               {error}
             </p>
           )}
@@ -96,7 +108,7 @@ export default function LoginPage() {
           <button
             type="submit"
             disabled={submitting}
-            className="mt-2 rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground disabled:opacity-60"
+            className="mt-3 rounded-xl bg-brand-gradient px-3 py-2.5 text-sm font-semibold text-white transition-transform duration-150 glow-brand hover:scale-[1.01] active:scale-[0.99] disabled:opacity-60 disabled:hover:scale-100"
           >
             {submitting
               ? "Please wait…"
@@ -112,11 +124,14 @@ export default function LoginPage() {
             setError(null)
             setMode((m) => (m === "login" ? "register" : "login"))
           }}
-          className="mt-4 text-sm text-muted-foreground hover:text-foreground"
+          className="mt-5 text-sm text-muted-foreground transition-colors hover:text-foreground"
         >
           {mode === "login"
-            ? "Need an account? Register"
-            : "Already have an account? Sign in"}
+            ? "Need an account? "
+            : "Already have an account? "}
+          <span className="text-brand-gradient font-medium">
+            {mode === "login" ? "Register" : "Sign in"}
+          </span>
         </button>
       </div>
     </div>

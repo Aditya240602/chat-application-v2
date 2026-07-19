@@ -53,14 +53,14 @@ export function ConversationItem({
     <button
       onClick={onSelect}
       className={cn(
-        "group relative flex w-full items-center gap-3 rounded-lg px-2.5 py-2.5 text-left transition-colors duration-150",
+        "group relative flex w-full items-center gap-3 rounded-xl px-2.5 py-2.5 text-left transition-all duration-150",
         active ? "bg-sidebar-accent" : "hover:bg-sidebar-accent/60",
       )}
     >
       {/* active highlight slider */}
       <span
         className={cn(
-          "absolute left-0 top-1/2 h-7 w-0.5 -translate-y-1/2 rounded-full bg-brand transition-all duration-200",
+          "absolute left-0 top-1/2 h-7 w-0.5 -translate-y-1/2 rounded-full bg-brand-gradient transition-all duration-200",
           active ? "opacity-100" : "opacity-0",
         )}
       />
@@ -87,7 +87,7 @@ export function ConversationItem({
             className={cn(
               "truncate text-xs",
               isTyping
-                ? "text-brand"
+                ? "text-brand-gradient font-medium"
                 : conversation.unread > 0
                   ? "text-foreground/80 font-medium"
                   : "text-muted-foreground",
@@ -98,7 +98,7 @@ export function ConversationItem({
           {conversation.unread > 0 && (
             <span
               className={cn(
-                "flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand px-1.5 text-[10px] font-semibold text-brand-foreground",
+                "flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-brand-gradient px-1.5 text-[10px] font-semibold text-brand-foreground",
                 pulse && "animate-badge-pulse",
               )}
             >
