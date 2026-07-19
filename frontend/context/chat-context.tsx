@@ -347,10 +347,13 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
         const msgs = await getMessages(Number(convId), after)
         if (msgs.length === 0) return
         const uiMsgs = msgs.map((m) => toUiMessage(m, currentUserId))
-        setMessagesByConversation((prev) => ({
-          ...prev,
-          [convId]: [...(prev[convId] ?? []), ...uiMsgs],
-        }))
+        setMessagesByConversation((prev) => {
+          const existing = prev[convId] ?? []
+          const existingIds = new Set(existing.map((m) => m.id))
+          const fresh = uiMsgs.filter((m) => !existingIds.has(m.id))
+          if (fresh.length === 0) return prev
+          return { ...prev, [convId]: [...existing, ...fresh] }
+        })
         lastIdRef.current[convId] = msgs[msgs.length - 1].id
 
         // Browser notifications for incoming messages (not from me)
@@ -394,7 +397,11 @@ export function ChatProvider({ children }: { children: React.ReactNode }) {
       try {
         const msgs = await getMessages(Number(convId))
         const uiMsgs = msgs.map((m) => toUiMessage(m, currentUserId))
-        setMessagesByConversation((prev) => ({ ...prev, [convId]: uiMsgs }))
+        setMessagesByConversation((prev) => {
+          const existing = prev[convId] ?? []
+          const stillPending = existing.filter((m) => m.id.startsWith("pending-"))
+          return { ...prev, [convId]: [...uiMsgs, ...stillPending] }
+        })
         if (msgs.length > 0) {
           lastIdRef.current[convId] = Math.max(
             lastIdRef.current[convId] ?? 0,
